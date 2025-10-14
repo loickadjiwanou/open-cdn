@@ -83,8 +83,10 @@ const storage = multer.diskStorage({
     const folder = req.body.folder || "";
     const uploadPath = path.join(STORAGE_PATH, folder);
 
+    // Create folder structure if it doesn't exist
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
+      console.log(`Created folder structure: ${folder}`);
     }
 
     cb(null, uploadPath);
@@ -352,6 +354,130 @@ cdnApp.delete("/api/file/delete", authenticateAPIKey, (req, res) => {
       error: "Internal Server Error",
       message: `Failed to delete file: ${error.message}`,
       path: filePath,
+    });
+  }
+});
+
+// Move file
+cdnApp.post("/api/move/file", authenticateAPIKey, (req, res) => {
+  const { sourcePath, destinationPath } = req.body;
+
+  if (!sourcePath || !destinationPath) {
+    return res.status(400).json({
+      error: "Bad Request: Source and destination paths are required",
+      message:
+        'Please provide both "sourcePath" and "destinationPath" in the request body.',
+    });
+  }
+
+  const sourceFullPath = path.join(STORAGE_PATH, sourcePath);
+  const destFullPath = path.join(STORAGE_PATH, destinationPath);
+
+  try {
+    if (!fs.existsSync(sourceFullPath)) {
+      return res.status(404).json({
+        error: "Not Found: Source file does not exist",
+        message: `The file "${sourcePath}" was not found.`,
+        path: sourcePath,
+      });
+    }
+
+    // Create destination directory if it doesn't exist
+    const destDir = path.dirname(destFullPath);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+
+    // Check if destination already exists
+    if (fs.existsSync(destFullPath)) {
+      return res.status(409).json({
+        error: "Conflict: Destination already exists",
+        message: `A file already exists at "${destinationPath}".`,
+        path: destinationPath,
+      });
+    }
+
+    fs.renameSync(sourceFullPath, destFullPath);
+
+    res.json({
+      success: true,
+      message: "File moved successfully",
+      from: sourcePath,
+      to: destinationPath,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: `Failed to move file: ${error.message}`,
+      sourcePath,
+      destinationPath,
+    });
+  }
+});
+
+// Move folder
+cdnApp.post("/api/move/folder", authenticateAPIKey, (req, res) => {
+  const { sourcePath, destinationPath } = req.body;
+
+  if (!sourcePath || !destinationPath) {
+    return res.status(400).json({
+      error: "Bad Request: Source and destination paths are required",
+      message:
+        'Please provide both "sourcePath" and "destinationPath" in the request body.',
+    });
+  }
+
+  const sourceFullPath = path.join(STORAGE_PATH, sourcePath);
+  const destFullPath = path.join(STORAGE_PATH, destinationPath);
+
+  try {
+    if (!fs.existsSync(sourceFullPath)) {
+      return res.status(404).json({
+        error: "Not Found: Source folder does not exist",
+        message: `The folder "${sourcePath}" was not found.`,
+        path: sourcePath,
+      });
+    }
+
+    // Check if trying to move into itself
+    if (destinationPath.startsWith(sourcePath + "/")) {
+      return res.status(400).json({
+        error: "Bad Request: Cannot move folder into itself",
+        message: `Cannot move "${sourcePath}" into its own subfolder "${destinationPath}".`,
+        sourcePath,
+        destinationPath,
+      });
+    }
+
+    // Create parent directory if it doesn't exist
+    const destDir = path.dirname(destFullPath);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+
+    // Check if destination already exists
+    if (fs.existsSync(destFullPath)) {
+      return res.status(409).json({
+        error: "Conflict: Destination already exists",
+        message: `A folder already exists at "${destinationPath}".`,
+        path: destinationPath,
+      });
+    }
+
+    fs.renameSync(sourceFullPath, destFullPath);
+
+    res.json({
+      success: true,
+      message: "Folder moved successfully",
+      from: sourcePath,
+      to: destinationPath,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: `Failed to move folder: ${error.message}`,
+      sourcePath,
+      destinationPath,
     });
   }
 });

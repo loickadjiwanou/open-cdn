@@ -260,8 +260,13 @@ Upload a file to the CDN storage. **File size is validated against the API key's
 
 **Form Data:**
 - `file`: The file to upload (required)
-- `folder`: Destination folder path (optional, default: root)
+- `folder`: Destination folder path (optional, default: root). **If the path doesn't exist, it will be created automatically.**
 - `keepOriginalName`: Keep original filename - `true` or `false` (optional, default: generates UUID)
+
+**Important Notes:**
+- The API will automatically create the folder structure if it doesn't exist
+- You can specify nested paths like `images/2025/thumbnails` even if they don't exist yet
+- File size is validated against the API key's limit
 
 **Response (Success):**
 ```json
@@ -302,12 +307,13 @@ Upload a file to the CDN storage. **File size is validated against the API key's
 }
 ```
 
-**Example (cURL - Small File):**
+**Example (cURL - Upload to nested path that doesn't exist yet):**
 ```bash
+# This will automatically create the folder structure images/2025/thumbnails
 curl -X POST \
   -H "x-api-key: opencdn-small-files-5mb-key" \
   -F "file=@/path/to/thumbnail.jpg" \
-  -F "folder=images/thumbnails" \
+  -F "folder=images/2025/thumbnails" \
   -F "keepOriginalName=true" \
   http://localhost:5000/api/file/upload
 ```
@@ -326,7 +332,8 @@ curl -X POST \
 ```javascript
 const formData = new FormData();
 formData.append('file', fileInput.files[0]);
-formData.append('folder', 'images');
+// Specify any path - will be created if it doesn't exist
+formData.append('folder', 'uploads/2025/january/documents');
 formData.append('keepOriginalName', 'true');
 
 fetch('http://localhost:5000/api/file/upload', {
@@ -340,6 +347,7 @@ fetch('http://localhost:5000/api/file/upload', {
 .then(data => {
   if (data.success) {
     console.log('File URL:', data.file.url);
+    console.log('Uploaded to:', data.file.path);
   } else {
     console.error('Upload failed:', data.message);
     // The error message will tell you which API key to use
@@ -426,7 +434,165 @@ curl -X DELETE \
 
 ---
 
-### 7. Access Files (Direct URLs)
+### 7. Move File
+
+Move or rename a file within the CDN storage.
+
+**Endpoint:** `POST /api/move/file`
+
+**Headers:**
+- `x-api-key: your-api-key`
+- `Content-Type: application/json`
+
+**Body:**
+```json
+{
+  "sourcePath": "images/old-photo.jpg",
+  "destinationPath": "archive/2024/photo.jpg"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "File moved successfully",
+  "from": "images/old-photo.jpg",
+  "to": "archive/2024/photo.jpg"
+}
+```
+
+**Response (Source Not Found):**
+```json
+{
+  "error": "Not Found: Source file does not exist",
+  "message": "The file \"images/old-photo.jpg\" was not found.",
+  "path": "images/old-photo.jpg"
+}
+```
+
+**Response (Destination Exists):**
+```json
+{
+  "error": "Conflict: Destination already exists",
+  "message": "A file already exists at \"archive/2024/photo.jpg\".",
+  "path": "archive/2024/photo.jpg"
+}
+```
+
+**Example (cURL):**
+```bash
+curl -X POST \
+  -H "x-api-key: opencdn-medium-files-50mb-key" \
+  -H "Content-Type: application/json" \
+  -d '{"sourcePath":"images/old-photo.jpg","destinationPath":"archive/2024/photo.jpg"}' \
+  http://localhost:5000/api/move/file
+```
+
+**Example (JavaScript):**
+```javascript
+// Move a file to a different folder
+fetch('http://localhost:5000/api/move/file', {
+  method: 'POST',
+  headers: {
+    'x-api-key': 'opencdn-medium-files-50mb-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    sourcePath: 'temp/upload.jpg',
+    destinationPath: 'images/2025/upload.jpg'
+  })
+})
+.then(res => res.json())
+.then(data => console.log(data));
+```
+
+**Note:** The destination folder structure will be created automatically if it doesn't exist.
+
+---
+
+### 8. Move Folder
+
+Move or rename an entire folder within the CDN storage.
+
+**Endpoint:** `POST /api/move/folder`
+
+**Headers:**
+- `x-api-key: your-api-key`
+- `Content-Type: application/json`
+
+**Body:**
+```json
+{
+  "sourcePath": "temp-images",
+  "destinationPath": "archive/old-images"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Folder moved successfully",
+  "from": "temp-images",
+  "to": "archive/old-images"
+}
+```
+
+**Response (Cannot Move Into Itself):**
+```json
+{
+  "error": "Bad Request: Cannot move folder into itself",
+  "message": "Cannot move \"images\" into its own subfolder \"images/subfolder\".",
+  "sourcePath": "images",
+  "destinationPath": "images/subfolder"
+}
+```
+
+**Response (Destination Exists):**
+```json
+{
+  "error": "Conflict: Destination already exists",
+  "message": "A folder already exists at \"archive/old-images\".",
+  "path": "archive/old-images"
+}
+```
+
+**Example (cURL):**
+```bash
+curl -X POST \
+  -H "x-api-key: opencdn-medium-files-50mb-key" \
+  -H "Content-Type: application/json" \
+  -d '{"sourcePath":"temp-images","destinationPath":"archive/old-images"}' \
+  http://localhost:5000/api/move/folder
+```
+
+**Example (JavaScript):**
+```javascript
+// Move an entire folder
+fetch('http://localhost:5000/api/move/folder', {
+  method: 'POST',
+  headers: {
+    'x-api-key': 'opencdn-medium-files-50mb-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    sourcePath: 'old-projects',
+    destinationPath: 'archive/2024/projects'
+  })
+})
+.then(res => res.json())
+.then(data => console.log(data));
+```
+
+**Note:** 
+- The destination parent folders will be created automatically if they don't exist
+- You cannot move a folder into itself or its own subfolders
+- All contents of the folder are moved recursively
+
+---
+
+### 9. Access Files (Direct URLs)
 
 Files can be accessed directly via their URLs **without authentication**.
 
@@ -455,7 +621,7 @@ You can use these URLs in:
 
 ---
 
-### 8. Admin Login
+### 10. Admin Login
 
 Authenticate to access the admin panel (web interface only).
 
@@ -688,7 +854,33 @@ async function uploadFile(file, folder = '') {
   return data;
 }
 
-// Usage
+// Move file to organize storage
+async function moveFile(sourcePath, destinationPath) {
+  const response = await fetch(`${CDN_URL}/api/move/file`, {
+    method: 'POST',
+    headers: {
+      'x-api-key': API_KEYS.medium,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ sourcePath, destinationPath })
+  });
+  return response.json();
+}
+
+// Move folder to reorganize
+async function moveFolder(sourcePath, destinationPath) {
+  const response = await fetch(`${CDN_URL}/api/move/folder`, {
+    method: 'POST',
+    headers: {
+      'x-api-key': API_KEYS.medium,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ sourcePath, destinationPath })
+  });
+  return response.json();
+}
+
+// Usage example
 async function main() {
   try {
     // Create a folder structure
@@ -700,14 +892,27 @@ async function main() {
     
     console.log(`Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
     
-    const result = await uploadFile(file, 'uploads/2025/images');
+    const uploadResult = await uploadFile(file, 'uploads/2025/images');
     
-    console.log('Success!');
-    console.log('File URL:', result.file.url);
-    console.log('API Key Used:', result.apiKeyUsed);
+    console.log('Upload Success!');
+    console.log('File URL:', uploadResult.file.url);
+    console.log('API Key Used:', uploadResult.apiKeyUsed);
     
-    // Use the URL in your app
-    // e.g., <img src="${result.file.url}" />
+    // Later, move the file to archive
+    await moveFile(
+      'uploads/2025/images/photo.jpg',
+      'archive/2025/photos/photo.jpg'
+    );
+    
+    console.log('File moved to archive!');
+    
+    // Or move entire folder
+    await moveFolder(
+      'uploads/2025/images',
+      'archive/2025/all-images'
+    );
+    
+    console.log('Folder reorganized!');
     
   } catch (error) {
     console.error('Error:', error.message);

@@ -6,7 +6,8 @@ A local Content Delivery Network (CDN) built with Electron and React. Store and 
 
 ✨ **Beautiful Modern Interface** - Clean green-themed UI using full screen space  
 📁 **Nested Folder Management** - Create folders and subfolders with proper navigation  
-📤 **Smart File Upload** - Upload files to specific folders with size-based API key control  
+📤 **Smart File Upload** - Visual folder tree selector for choosing upload destination  
+🎯 **Drag & Drop** - Drag files and folders to move them between directories  
 🔑 **Three-Tier API Keys** - Different keys for small (5MB), medium (50MB), and large (unlimited) files  
 👁️ **Media Preview** - Preview images and play videos directly in the app  
 ℹ️ **File Details** - View complete file information including size, dates, and URLs  
@@ -82,11 +83,37 @@ This creates a distributable application in the `dist` folder.
 3. Use the interface to:
    - Navigate through folders using the breadcrumb
    - Create folders and subfolders
-   - Upload files to the current folder
+   - Upload files using the visual folder tree selector
+   - Drag & drop files and folders to move them
    - Preview images and videos
    - View file details
    - Copy file URLs
    - Delete files and folders
+
+### File Upload with Folder Selection
+
+When uploading a file:
+1. Click **📤 Upload File** and select a file
+2. A modal opens showing the complete folder tree
+3. Navigate the tree structure (click arrows to expand/collapse)
+4. Click on a folder to select it as the destination
+5. Click **✓ Upload Here** to upload
+6. The file is uploaded to the selected location
+
+### Drag & Drop to Move Items
+
+**Move files or folders easily:**
+1. Click and hold on any file or folder
+2. Drag it to the destination folder
+3. The destination folder highlights in green
+4. Release to move
+5. A loader appears during the operation
+
+**Rules:**
+- ❌ Cannot move a folder into itself
+- ❌ Cannot move into a subfolder of itself
+- ✅ Both files and folders can be dragged
+- ✅ Works with nested folder structures
 
 ### File Preview & Details
 
@@ -189,6 +216,8 @@ Files maintain the folder structure you create in the app.
 | DELETE | `/api/folder/delete` | Delete a folder | ✅ |
 | POST | `/api/file/upload` | Upload a file (size checked) | ✅ |
 | DELETE | `/api/file/delete` | Delete a file | ✅ |
+| POST | `/api/move/file` | Move or rename a file | ✅ |
+| POST | `/api/move/folder` | Move or rename a folder | ✅ |
 | POST | `/api/admin/login` | Admin panel login | ❌ |
 | GET | `/files/{path}` | Access files directly | ❌ |
 
@@ -250,6 +279,13 @@ Check the error message - it will tell you exactly which API key to use. If uplo
 ### File Uploaded to Wrong Folder
 Make sure you're in the correct folder before uploading. The breadcrumb shows your current location.
 
+**New:** Use the visual folder tree selector when uploading to choose exactly where the file should go.
+
+### Drag & Drop Not Working
+- Ensure you're dragging onto a folder (not a file)
+- The destination folder will highlight in green when valid
+- Check browser console for any JavaScript errors
+
 ### Preview Not Working
 - Images: Ensure the file has a valid image extension (.jpg, .png, .gif, etc.)
 - Videos: Ensure the file has a valid video extension (.mp4, .webm, .ogg, etc.)
@@ -263,9 +299,15 @@ Make sure you're in the correct folder before uploading. The breadcrumb shows yo
 - ✅ Image and video preview with modal
 - ✅ Detailed file information view
 - ✅ Proper nested folder navigation
-- ✅ Upload files to current folder location
+- ✅ Visual folder tree selector for uploads
+- ✅ Drag & drop to move files and folders
+- ✅ Move/rename files and folders via API
+- ✅ Animated loader during operations
+- ✅ Smart folder tree (no arrows for empty folders)
+- ✅ Automatic folder creation on upload
 - ✅ Precise error messages for all API operations
 - ✅ Copy-to-clipboard for file URLs
+- ✅ Integrated API documentation viewer
 
 ## License
 

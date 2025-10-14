@@ -23,6 +23,10 @@ function App() {
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [showFolderSelector, setShowFolderSelector] = useState(false);
+  const [folderTree, setFolderTree] = useState([]);
+  const [selectedUploadPath, setSelectedUploadPath] = useState("");
+  const [expandedFolders, setExpandedFolders] = useState({});
 
   // Preview modal state
   const [previewModal, setPreviewModal] = useState({
@@ -33,6 +37,11 @@ function App() {
 
   // Documentation modal state
   const [showDocs, setShowDocs] = useState(false);
+
+  // Drag and drop state
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverFolder, setDragOverFolder] = useState(null);
+  const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -94,6 +103,96 @@ function App() {
     }
   };
 
+  const buildFolderTree = (items, basePath = "") => {
+    const tree = [];
+
+    items.forEach((item) => {
+      if (item.type === "folder") {
+        const fullPath = basePath ? `${basePath}/${item.name}` : item.name;
+        tree.push({
+          name: item.name,
+          path: fullPath,
+          children: null, // null means not loaded yet, [] means loaded but empty
+          hasChildren: null, // will be determined when expanded
+        });
+      }
+    });
+
+    return tree;
+  };
+
+  const loadFolderTree = async (folderPath = "", parentTree = null) => {
+    try {
+      const response = await fetch(`${API_URL}/list?folder=${folderPath}`, {
+        headers: { "x-api-key": DEFAULT_API_KEY },
+      });
+      const data = await response.json();
+
+      if (data.items) {
+        const folders = data.items.filter((item) => item.type === "folder");
+
+        if (parentTree) {
+          return folders.map((folder) => ({
+            name: folder.name,
+            path: folderPath ? `${folderPath}/${folder.name}` : folder.name,
+            children: null,
+            hasChildren: null,
+          }));
+        } else {
+          const tree = folders.map((folder) => ({
+            name: folder.name,
+            path: folder.name,
+            children: null,
+            hasChildren: null,
+          }));
+          setFolderTree(tree);
+          return tree;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading folder tree:", error);
+    }
+    return [];
+  };
+
+  const toggleFolder = async (folderPath) => {
+    const isExpanded = expandedFolders[folderPath];
+
+    if (isExpanded) {
+      // Collapse
+      setExpandedFolders((prev) => ({ ...prev, [folderPath]: false }));
+    } else {
+      // Expand and load children
+      setExpandedFolders((prev) => ({ ...prev, [folderPath]: true }));
+
+      // Load children for this folder
+      const children = await loadFolderTree(folderPath);
+
+      // Update the tree with children
+      const updateTreeChildren = (tree) => {
+        return tree.map((folder) => {
+          if (folder.path === folderPath) {
+            return {
+              ...folder,
+              children: children,
+              hasChildren: children.length > 0,
+            };
+          }
+          if (
+            folder.children &&
+            Array.isArray(folder.children) &&
+            folder.children.length > 0
+          ) {
+            return { ...folder, children: updateTreeChildren(folder.children) };
+          }
+          return folder;
+        });
+      };
+
+      setFolderTree((prev) => updateTreeChildren(prev));
+    }
+  };
+
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
 
@@ -134,7 +233,7 @@ function App() {
 
     const formData = new FormData();
     formData.append("file", uploadFile);
-    formData.append("folder", currentPath);
+    formData.append("folder", selectedUploadPath);
     formData.append("keepOriginalName", "true");
 
     try {
@@ -151,17 +250,79 @@ function App() {
       if (response.ok) {
         setUploadFile(null);
         setUploadError("");
+        setShowFolderSelector(false);
+        setSelectedUploadPath("");
         loadItems();
         loadStorageInfo();
+        alert("File uploaded successfully!");
       } else {
         setUploadError(data.message || "Upload failed");
-        // Don't clear the file on error so user can try with a different API key
       }
     } catch (error) {
       console.error("Error uploading file:", error);
       setUploadError("Network error: Unable to upload file");
     }
     setUploading(false);
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadFile(file);
+      setUploadError("");
+      // Load folder tree when file is selected
+      await loadFolderTree();
+      setShowFolderSelector(true);
+      setSelectedUploadPath(""); // Reset to root
+    }
+  };
+
+  const renderFolderTree = (folders, level = 0) => {
+    return folders.map((folder, index) => {
+      const hasSubfolders =
+        folder.hasChildren === true || folder.children === null;
+      const showToggle =
+        hasSubfolders &&
+        folder.children !== null &&
+        (!Array.isArray(folder.children) || folder.children.length > 0);
+
+      return (
+        <div
+          key={folder.path}
+          className="tree-item"
+          style={{ marginLeft: `${level * 20}px` }}
+        >
+          <div className="tree-item-content">
+            {showToggle ? (
+              <button
+                className="tree-toggle"
+                onClick={() => toggleFolder(folder.path)}
+              >
+                {expandedFolders[folder.path] ? "▼" : "▶"}
+              </button>
+            ) : (
+              <span className="tree-toggle-spacer"></span>
+            )}
+            <button
+              className={`tree-folder ${
+                selectedUploadPath === folder.path ? "selected" : ""
+              }`}
+              onClick={() => setSelectedUploadPath(folder.path)}
+            >
+              📁 {folder.name}
+            </button>
+          </div>
+          {expandedFolders[folder.path] &&
+            folder.children &&
+            Array.isArray(folder.children) &&
+            folder.children.length > 0 && (
+              <div className="tree-children">
+                {renderFolderTree(folder.children, level + 1)}
+              </div>
+            )}
+        </div>
+      );
+    });
   };
 
   const handleDelete = async (item) => {
@@ -247,6 +408,100 @@ function App() {
 
   const closePreview = () => {
     setPreviewModal({ show: false, type: null, item: null });
+  };
+
+  const handleDragStart = (e, item) => {
+    setDraggedItem(item);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", e.target);
+  };
+
+  const handleDragOver = (e, folder) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (folder && folder.type === "folder") {
+      setDragOverFolder(folder.name);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    setDragOverFolder(null);
+  };
+
+  const handleDrop = async (e, targetFolder) => {
+    e.preventDefault();
+    setDragOverFolder(null);
+
+    if (!draggedItem) return;
+
+    // Can't drop into itself
+    if (draggedItem.name === targetFolder.name) {
+      alert("Cannot move a folder into itself");
+      setDraggedItem(null);
+      return;
+    }
+
+    setIsMoving(true);
+
+    try {
+      const sourcePath = currentPath
+        ? `${currentPath}/${draggedItem.name}`
+        : draggedItem.name;
+      const targetPath = currentPath
+        ? `${currentPath}/${targetFolder.name}`
+        : targetFolder.name;
+      const newPath = `${targetPath}/${draggedItem.name}`;
+
+      if (draggedItem.type === "folder") {
+        // Move folder
+        const response = await fetch(`${API_URL}/move/folder`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": DEFAULT_API_KEY,
+          },
+          body: JSON.stringify({
+            sourcePath,
+            destinationPath: newPath,
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          loadItems();
+          loadStorageInfo();
+        } else {
+          alert(data.message || "Failed to move folder");
+        }
+      } else {
+        // Move file
+        const response = await fetch(`${API_URL}/move/file`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": DEFAULT_API_KEY,
+          },
+          body: JSON.stringify({
+            sourcePath,
+            destinationPath: newPath,
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          loadItems();
+          loadStorageInfo();
+        } else {
+          alert(data.message || "Failed to move file");
+        }
+      }
+    } catch (error) {
+      console.error("Error moving item:", error);
+      alert("Error moving item");
+    }
+
+    setIsMoving(false);
+    setDraggedItem(null);
   };
 
   if (!isAuthenticated) {
@@ -400,10 +655,7 @@ function App() {
               📤 Upload File
               <input
                 type="file"
-                onChange={(e) => {
-                  setUploadFile(e.target.files[0]);
-                  setUploadError("");
-                }}
+                onChange={handleFileSelect}
                 style={{ display: "none" }}
               />
             </label>
@@ -432,32 +684,69 @@ function App() {
           </div>
         )}
 
-        {uploadFile && (
-          <div className="upload-box">
-            <div className="upload-info">
-              <span className="upload-filename">📄 {uploadFile.name}</span>
-              <span className="upload-size">
-                ({formatBytes(uploadFile.size)})
-              </span>
+        {showFolderSelector && uploadFile && (
+          <div className="folder-selector-modal">
+            <div className="folder-selector-content">
+              <h3>📂 Select Upload Destination</h3>
+              <p className="folder-selector-file">
+                Uploading: <strong>{uploadFile.name}</strong> (
+                {formatBytes(uploadFile.size)})
+              </p>
+
+              <div className="folder-tree-container">
+                <div className="tree-item" style={{ marginLeft: 0 }}>
+                  <div className="tree-item-content">
+                    <button
+                      className={`tree-folder tree-root ${
+                        selectedUploadPath === "" ? "selected" : ""
+                      }`}
+                      onClick={() => setSelectedUploadPath("")}
+                    >
+                      🏠 Root (Home)
+                    </button>
+                  </div>
+                </div>
+
+                {folderTree.length > 0 ? (
+                  renderFolderTree(folderTree)
+                ) : (
+                  <div className="no-folders">
+                    <p>No folders yet. File will be uploaded to root.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="selected-path-display">
+                <strong>Upload to:</strong>
+                <span className="selected-path">
+                  {selectedUploadPath || "/  (root)"}
+                </span>
+              </div>
+
+              {uploadError && <div className="upload-error">{uploadError}</div>}
+
+              <div className="folder-selector-actions">
+                <button
+                  onClick={handleFileUpload}
+                  className="btn btn-primary"
+                  disabled={uploading}
+                >
+                  {uploading ? "Uploading..." : "✓ Upload Here"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowFolderSelector(false);
+                    setUploadFile(null);
+                    setUploadError("");
+                    setSelectedUploadPath("");
+                  }}
+                  className="btn btn-secondary"
+                  disabled={uploading}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-            <button
-              onClick={handleFileUpload}
-              className="btn btn-primary"
-              disabled={uploading}
-            >
-              {uploading ? "Uploading..." : "Upload"}
-            </button>
-            <button
-              onClick={() => {
-                setUploadFile(null);
-                setUploadError("");
-              }}
-              className="btn btn-secondary"
-              disabled={uploading}
-            >
-              Cancel
-            </button>
-            {uploadError && <div className="upload-error">{uploadError}</div>}
           </div>
         )}
 
@@ -474,7 +763,19 @@ function App() {
           ) : (
             <div className="items-grid">
               {items.map((item, index) => (
-                <div key={index} className="item-card">
+                <div
+                  key={index}
+                  className={`item-card ${
+                    dragOverFolder === item.name ? "drag-over" : ""
+                  } ${draggedItem?.name === item.name ? "dragging" : ""}`}
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, item)}
+                  onDragOver={(e) =>
+                    item.type === "folder" && handleDragOver(e, item)
+                  }
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => item.type === "folder" && handleDrop(e, item)}
+                >
                   <div className="item-icon">
                     {item.type === "folder" ? "📁" : "📄"}
                   </div>
@@ -818,45 +1119,39 @@ function App() {
 
               <div className="docs-section">
                 <h3>💡 Example Usage</h3>
-                <pre className="code-block code-example">
-                  {`
-            // Upload a file with JavaScript
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            formData.append('folder', 'images');
+                <pre className="code-block code-example">{`// Upload a file with JavaScript
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+formData.append('folder', 'images');
 
-            fetch('http://localhost:5000/api/file/upload', {
-            method: 'POST',
-            headers: {
-                'x-api-key': 'opencdn-medium-files-50mb-key'
-            },
-            body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-            if (data.success) {
-                console.log('File URL:', data.file.url);
-            } else {
-                console.error('Error:', data.message);
-            }
-            });
-                    `}
-                </pre>
+fetch('http://localhost:5000/api/file/upload', {
+  method: 'POST',
+  headers: {
+    'x-api-key': 'opencdn-medium-files-50mb-key'
+  },
+  body: formData
+})
+.then(res => res.json())
+.then(data => {
+  if (data.success) {
+    console.log('File URL:', data.file.url);
+  } else {
+    console.error('Error:', data.message);
+  }
+});`}</pre>
               </div>
 
               <div className="docs-section">
                 <h3>❌ Error Handling</h3>
                 <div className="docs-note error-note">
                   <strong>File Too Large Example:</strong>
-                  <pre className="code-block">
-                    {`{
-    "error": "Payload Too Large",
-    "message": "Your file size is 40.00 MB, but your API key 
-                (Small Files max 5MB) only allows files up to 5 MB.",
-    "suggestion": "Please use the Medium Files API key (max 50MB) 
-                    or Large Files API key (unlimited)."
-}`}
-                  </pre>
+                  <pre className="code-block">{`{
+  "error": "Payload Too Large",
+  "message": "Your file size is 40.00 MB, but your API key 
+             (Small Files max 5MB) only allows files up to 5 MB.",
+  "suggestion": "Please use the Medium Files API key (max 50MB) 
+                or Large Files API key (unlimited)."
+}`}</pre>
                 </div>
               </div>
 
@@ -893,6 +1188,16 @@ function App() {
       >
         📚
       </button>
+
+      {/* Moving Loader */}
+      {isMoving && (
+        <div className="moving-loader">
+          <div className="loader-content">
+            <div className="spinner"></div>
+            <p>Moving item...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

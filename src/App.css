@@ -297,6 +297,183 @@ body {
   width: auto;
 }
 
+/* Folder Selector Modal */
+.folder-selector-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.folder-selector-content {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.folder-selector-content h3 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.folder-selector-file {
+  color: #666;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.folder-selector-file strong {
+  color: #10b981;
+}
+
+.folder-tree-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 15px;
+  background: #f8f9fa;
+  margin-bottom: 20px;
+  min-height: 200px;
+  max-height: 400px;
+}
+
+.tree-item {
+  margin: 4px 0;
+}
+
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tree-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #666;
+  padding: 4px 8px;
+  transition: transform 0.2s;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tree-toggle:hover {
+  transform: scale(1.2);
+}
+
+.tree-toggle-spacer {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.tree-folder {
+  background: white;
+  border: 2px solid #e5e7eb;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  text-align: left;
+}
+
+.tree-folder:hover {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.tree-folder.selected {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-color: #059669;
+  font-weight: 600;
+}
+
+.tree-root {
+  font-weight: 600;
+  background: #f0fdf4;
+}
+
+.tree-root.selected {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.tree-children {
+  margin-left: 20px;
+  border-left: 2px solid #e5e7eb;
+  padding-left: 10px;
+}
+
+.no-folders {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.no-folders p {
+  font-size: 14px;
+}
+
+.selected-path-display {
+  background: #f0fdf4;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 2px solid #10b981;
+}
+
+.selected-path-display strong {
+  color: #059669;
+  margin-right: 10px;
+}
+
+.selected-path {
+  font-family: 'Courier New', monospace;
+  color: #10b981;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.folder-selector-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.folder-selector-actions .btn {
+  flex: 1;
+  padding: 14px 24px;
+}
+
 .upload-box {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border: 2px dashed #10b981;
@@ -368,11 +545,23 @@ body {
   gap: 15px;
   align-items: flex-start;
   position: relative;
+  cursor: move;
 }
 
 .item-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.item-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.item-card.drag-over {
+  border: 3px dashed #10b981;
+  background: #f0fdf4;
+  transform: scale(1.02);
 }
 
 .item-icon {
@@ -984,4 +1173,47 @@ body {
   .docs-table td {
     padding: 8px 10px;
   }
+}
+
+/* Moving Loader */
+.moving-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.loader-content {
+  background: white;
+  padding: 40px 60px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 20px;
+  border: 5px solid #f0fdf4;
+  border-top: 5px solid #10b981;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader-content p {
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
 }
