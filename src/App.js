@@ -13,10 +13,15 @@ function App() {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  const [currentView, setCurrentView] = useState("files"); // 'files' or 'stats'
+  const [currentView, setCurrentView] = useState("files"); // 'files', 'stats', or 'manage'
   const [items, setItems] = useState([]);
   const [storageInfo, setStorageInfo] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Management state
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreFile, setRestoreFile] = useState(null);
+  const [restoreLoading, setRestoreLoading] = useState(false);
 
   // Upload state
   const [uploadFile, setUploadFile] = useState(null);
@@ -317,9 +322,8 @@ Get storage information
 List all files
 
 ### POST /api/file/upload
-Upload a file with custom name
+Upload a file with original name
 - Form field: \`file\` (required)
-- Form field: \`customFileName\` (required, extension preserved)
 
 ### DELETE /api/file/delete
 Delete a file
@@ -348,6 +352,118 @@ For complete documentation, visit the GitHub repository or check API.md in the p
     notification.textContent = "✓ API documentation downloaded!";
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 2000);
+  };
+
+  const handleBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/backup`, {
+        headers: { "x-api-key": DEFAULT_API_KEY },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `opencdn-backup-${
+          new Date().toISOString().split("T")[0]
+        }.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        const notification = document.createElement("div");
+        notification.className = "copy-notification";
+        notification.textContent = "✓ Backup downloaded successfully!";
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2000);
+      } else {
+        alert("Backup failed");
+      }
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      alert("Error creating backup");
+    }
+    setBackupLoading(false);
+  };
+
+  const handleRestore = async () => {
+    if (!restoreFile) return;
+
+    const confirmRestore = window.confirm(
+      "This will restore files from the backup. Existing files with the same names will be overwritten. Continue?"
+    );
+
+    if (!confirmRestore) return;
+
+    setRestoreLoading(true);
+    const formData = new FormData();
+    formData.append("backup", restoreFile);
+
+    try {
+      const response = await fetch(`${API_URL}/restore`, {
+        method: "POST",
+        headers: { "x-api-key": DEFAULT_API_KEY },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`Restore successful! ${data.filesRestored} files restored.`);
+        setRestoreFile(null);
+        loadItems();
+        loadStorageInfo();
+        loadStats();
+      } else {
+        alert(data.message || "Restore failed");
+      }
+    } catch (error) {
+      console.error("Error restoring backup:", error);
+      alert("Error restoring backup");
+    }
+    setRestoreLoading(false);
+  };
+
+  const handleClearCDN = async () => {
+    const confirmClear = window.confirm(
+      '⚠️ WARNING: This will DELETE ALL FILES in your CDN. This action cannot be undone!\n\nType "DELETE ALL" to confirm.'
+    );
+
+    if (!confirmClear) return;
+
+    const secondConfirm = prompt('Type "DELETE ALL" to confirm:');
+
+    if (secondConfirm !== "DELETE ALL") {
+      alert("Confirmation failed. No files were deleted.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/clear`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": DEFAULT_API_KEY,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`CDN cleared! ${data.filesDeleted} files deleted.`);
+        loadItems();
+        loadStorageInfo();
+        loadStats();
+      } else {
+        alert(data.message || "Clear failed");
+      }
+    } catch (error) {
+      console.error("Error clearing CDN:", error);
+      alert("Error clearing CDN");
+    }
   };
 
   // Filter and sort items
@@ -524,6 +640,13 @@ For complete documentation, visit the GitHub repository or check API.md in the p
           >
             <span className="nav-icon">📊</span>
             <span>Statistics</span>
+          </button>
+          <button
+            className={`nav-item ${currentView === "manage" ? "active" : ""}`}
+            onClick={() => setCurrentView("manage")}
+          >
+            <span className="nav-icon">⚙️</span>
+            <span>Management</span>
           </button>
           <button className="nav-item" onClick={() => setShowDocs(true)}>
             <span className="nav-icon">📚</span>
@@ -774,6 +897,164 @@ For complete documentation, visit the GitHub repository or check API.md in the p
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {currentView === "manage" && (
+          <>
+            <header className="content-header">
+              <div>
+                <h1>CDN Management</h1>
+                <p className="header-subtitle">
+                  Backup, restore, and manage your CDN
+                </p>
+              </div>
+            </header>
+
+            <div className="management-grid">
+              {/* Backup Section */}
+              <div className="management-card">
+                <div className="management-card-header">
+                  <div className="management-icon">💾</div>
+                  <div>
+                    <h3>Backup CDN</h3>
+                    <p>Download all your files as a ZIP archive</p>
+                  </div>
+                </div>
+                <div className="management-card-body">
+                  <p className="management-description">
+                    Creates a complete backup of all files in your CDN. The
+                    backup will be downloaded as a ZIP file with today's date.
+                  </p>
+                  <ul className="management-list">
+                    <li>✓ All files included</li>
+                    <li>✓ Original names preserved</li>
+                    <li>✓ Safe and secure</li>
+                  </ul>
+                </div>
+                <div className="management-card-footer">
+                  <button
+                    onClick={handleBackup}
+                    className="btn btn-primary btn-block"
+                    disabled={backupLoading}
+                  >
+                    {backupLoading ? (
+                      <>
+                        <span className="spinner-small"></span>
+                        <span>Creating Backup...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>⬇️</span>
+                        <span>Download Backup</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Restore Section */}
+              <div className="management-card">
+                <div className="management-card-header">
+                  <div className="management-icon">📂</div>
+                  <div>
+                    <h3>Restore from Backup</h3>
+                    <p>Upload a ZIP file to restore your files</p>
+                  </div>
+                </div>
+                <div className="management-card-body">
+                  <p className="management-description">
+                    Restore files from a previous backup. The system will
+                    automatically extract files from the ZIP, even if they're in
+                    a subfolder.
+                  </p>
+                  <ul className="management-list">
+                    <li>✓ Auto-detects file location in ZIP</li>
+                    <li>✓ Overwrites existing files</li>
+                    <li>✓ Preserves file names</li>
+                  </ul>
+                  {restoreFile && (
+                    <div className="selected-file">
+                      <span>📦</span>
+                      <span>{restoreFile.name}</span>
+                      <button
+                        onClick={() => setRestoreFile(null)}
+                        className="remove-file"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="management-card-footer">
+                  {!restoreFile ? (
+                    <label className="btn btn-primary btn-block">
+                      <span>📤</span>
+                      <span>Select Backup ZIP</span>
+                      <input
+                        type="file"
+                        accept=".zip"
+                        onChange={(e) => setRestoreFile(e.target.files[0])}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  ) : (
+                    <button
+                      onClick={handleRestore}
+                      className="btn btn-primary btn-block"
+                      disabled={restoreLoading}
+                    >
+                      {restoreLoading ? (
+                        <>
+                          <span className="spinner-small"></span>
+                          <span>Restoring...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>⬆️</span>
+                          <span>Restore Files</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="management-card danger-card">
+                <div className="management-card-header">
+                  <div className="management-icon danger-icon">⚠️</div>
+                  <div>
+                    <h3>Danger Zone</h3>
+                    <p>Irreversible actions - use with caution</p>
+                  </div>
+                </div>
+                <div className="management-card-body">
+                  <p className="management-description danger-text">
+                    <strong>Warning:</strong> This action will permanently
+                    delete ALL files in your CDN. This cannot be undone!
+                  </p>
+                  <ul className="management-list danger-list">
+                    <li>⚠️ All files will be deleted</li>
+                    <li>⚠️ Action is permanent</li>
+                    <li>⚠️ No recovery possible</li>
+                  </ul>
+                  <div className="danger-recommendation">
+                    💡 <strong>Recommendation:</strong> Create a backup before
+                    clearing your CDN
+                  </div>
+                </div>
+                <div className="management-card-footer">
+                  <button
+                    onClick={handleClearCDN}
+                    className="btn btn-danger btn-block"
+                  >
+                    <span>🗑️</span>
+                    <span>Clear All Files</span>
+                  </button>
                 </div>
               </div>
             </div>

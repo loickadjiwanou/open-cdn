@@ -1176,6 +1176,205 @@ body {
   }
 }
 
+/* Management Page */
+.management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+.management-card {
+  background: var(--surface);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s;
+}
+
+.management-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px var(--shadow);
+}
+
+.management-card-header {
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  border-bottom: 2px solid var(--border);
+}
+
+.management-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--primary-light);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.management-card-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.management-card-header p {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.management-card-body {
+  padding: 24px;
+  flex: 1;
+}
+
+.management-description {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.management-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.management-list li {
+  padding: 8px 0;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.management-card-footer {
+  padding: 20px 24px;
+  border-top: 2px solid var(--border);
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--primary-light);
+  border-radius: 10px;
+  margin-top: 16px;
+}
+
+.selected-file span:first-child {
+  font-size: 24px;
+}
+
+.selected-file span:nth-child(2) {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.remove-file {
+  background: white;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+}
+
+.remove-file:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Danger Zone Styles */
+.danger-card {
+  border-color: #fee2e2;
+}
+
+.danger-card:hover {
+  border-color: var(--danger);
+  box-shadow: 0 12px 24px rgba(239, 68, 68, 0.2);
+}
+
+.danger-icon {
+  background: #fee2e2;
+}
+
+.danger-text {
+  color: var(--danger);
+}
+
+.danger-list li {
+  color: var(--danger);
+}
+
+.danger-recommendation {
+  background: #fffbeb;
+  border-left: 4px solid var(--warning);
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #92400e;
+  margin-top: 16px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px var(--danger);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .sidebar {

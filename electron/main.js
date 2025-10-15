@@ -6,6 +6,8 @@ const multer = require("multer");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const credentials = require("../src/credentials");
+const archiver = require("archiver");
+const unzipper = require("unzipper");
 
 const CDN_PORT = 5000;
 const STORAGE_PATH = path.join(app.getPath("userData"), "cdn-storage");
@@ -253,7 +255,6 @@ cdnApp.post(
     const apiKeyLabel = req.apiKeyInfo.label;
 
     console.log("File uploaded:", req.file.filename);
-    console.log("Custom filename:", req.body.customFileName);
     console.log("File size:", fileSize);
 
     // Check file size against API key limit
@@ -290,7 +291,7 @@ cdnApp.post(
       success: true,
       message: "File uploaded successfully",
       file: {
-        originalName: req.body.customFileName || req.file.originalname,
+        originalName: req.file.originalname,
         filename: req.file.filename,
         size: req.file.size,
         sizeMB: (req.file.size / (1024 * 1024)).toFixed(2),
@@ -502,6 +503,119 @@ cdnApp.post("/api/admin/login", (req, res) => {
       success: false,
       error: "Unauthorized: Invalid credentials",
       message: "The username or password you entered is incorrect.",
+    });
+  }
+});
+
+// Backup endpoint
+cdnApp.get("/api/backup", authenticateAPIKey, (req, res) => {
+  try {
+    const archive = archiver("zip", { zlib: { level: 9 } });
+
+    res.attachment(
+      `opencdn-backup-${new Date().toISOString().split("T")[0]}.zip`
+    );
+    archive.pipe(res);
+
+    // Add all files from storage
+    archive.directory(STORAGE_PATH, false);
+
+    archive.finalize();
+  } catch (error) {
+    console.error("Backup error:", error);
+    res.status(500).json({
+      error: "Backup failed",
+      message: error.message,
+    });
+  }
+});
+
+// Restore endpoint
+cdnApp.post(
+  "/api/restore",
+  authenticateAPIKey,
+  upload.single("backup"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        error: "Bad Request: No backup file uploaded",
+        message: "Please provide a ZIP file.",
+      });
+    }
+
+    try {
+      let filesRestored = 0;
+
+      // Extract ZIP
+      const directory = await unzipper.Open.file(req.file.path);
+
+      for (const file of directory.files) {
+        if (file.type === "File") {
+          // Get filename (strip any folder structure)
+          const filename = path.basename(file.path);
+
+          // Skip hidden files and system files
+          if (filename.startsWith(".") || filename.startsWith("__")) {
+            continue;
+          }
+
+          const targetPath = path.join(STORAGE_PATH, filename);
+          const content = await file.buffer();
+          fs.writeFileSync(targetPath, content);
+          filesRestored++;
+        }
+      }
+
+      // Delete uploaded ZIP
+      fs.unlinkSync(req.file.path);
+
+      res.json({
+        success: true,
+        message: "Restore successful",
+        filesRestored,
+      });
+    } catch (error) {
+      console.error("Restore error:", error);
+
+      // Cleanup on error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
+      res.status(500).json({
+        error: "Restore failed",
+        message: error.message,
+      });
+    }
+  }
+);
+
+// Clear CDN endpoint
+cdnApp.delete("/api/clear", authenticateAPIKey, (req, res) => {
+  try {
+    const files = fs.readdirSync(STORAGE_PATH);
+    let filesDeleted = 0;
+
+    files.forEach((file) => {
+      const filePath = path.join(STORAGE_PATH, file);
+      const stats = fs.statSync(filePath);
+
+      if (stats.isFile()) {
+        fs.unlinkSync(filePath);
+        filesDeleted++;
+      }
+    });
+
+    res.json({
+      success: true,
+      message: "CDN cleared successfully",
+      filesDeleted,
+    });
+  } catch (error) {
+    console.error("Clear error:", error);
+    res.status(500).json({
+      error: "Clear failed",
+      message: error.message,
     });
   }
 });
