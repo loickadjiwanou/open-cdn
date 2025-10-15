@@ -531,6 +531,7 @@ body {
   word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1351,6 +1352,8 @@ body {
   background: #dc2626;
   transform: translateY(-2px);
   box-shadow: 0 12px 24px -10px var(--danger);
+  transition: all 0.3s ease; /* 👈 ajouté ici */
+  z-index: 10000;
 }
 
 @keyframes slideInRight {

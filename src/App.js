@@ -22,6 +22,8 @@ function App() {
   const [backupLoading, setBackupLoading] = useState(false);
   const [restoreFile, setRestoreFile] = useState(null);
   const [restoreLoading, setRestoreLoading] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState("");
 
   // Upload state
   const [uploadFile, setUploadFile] = useState(null);
