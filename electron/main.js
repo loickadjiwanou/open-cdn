@@ -80,23 +80,12 @@ const authenticateAPIKey = (req, res, next) => {
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const folder = req.body.folder || "";
-    const uploadPath = path.join(STORAGE_PATH, folder);
-
-    // Create folder structure if it doesn't exist
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-      console.log(`Created folder structure: ${folder}`);
-    }
-
-    cb(null, uploadPath);
+    // All uploads go to root
+    cb(null, STORAGE_PATH);
   },
   filename: (req, file, cb) => {
-    const uniqueName =
-      req.body.keepOriginalName === "true"
-        ? file.originalname
-        : `${uuidv4()}-${file.originalname}`;
-    cb(null, uniqueName);
+    // Use original filename
+    cb(null, file.originalname);
   },
 });
 
@@ -263,6 +252,10 @@ cdnApp.post(
     const maxSize = req.apiKeyInfo.maxSize;
     const apiKeyLabel = req.apiKeyInfo.label;
 
+    console.log("File uploaded:", req.file.filename);
+    console.log("Custom filename:", req.body.customFileName);
+    console.log("File size:", fileSize);
+
     // Check file size against API key limit
     if (fileSize > maxSize) {
       // Delete the uploaded file since it exceeds the limit
@@ -291,20 +284,17 @@ cdnApp.post(
       });
     }
 
-    const folder = req.body.folder || "";
-    const fileUrl = `http://localhost:${CDN_PORT}/files/${path
-      .join(folder, req.file.filename)
-      .replace(/\\/g, "/")}`;
+    const fileUrl = `http://localhost:${CDN_PORT}/files/${req.file.filename}`;
 
     res.json({
       success: true,
       message: "File uploaded successfully",
       file: {
-        originalName: req.file.originalname,
+        originalName: req.body.customFileName || req.file.originalname,
         filename: req.file.filename,
         size: req.file.size,
         sizeMB: (req.file.size / (1024 * 1024)).toFixed(2),
-        path: path.join(folder, req.file.filename),
+        path: req.file.filename,
         url: fileUrl,
       },
       apiKeyUsed: apiKeyLabel,

@@ -1,22 +1,38 @@
 # OpenCDN 🚀
 
-A local Content Delivery Network (CDN) built with Electron and React. Store and serve files directly from your device with a beautiful web interface and RESTful API.
+A modern, professional Content Delivery Network (CDN) built with Electron and React. Store and serve files directly from your device with a stunning interface and powerful features.
 
-## Features
+## ✨ Features
 
-✨ **Beautiful Modern Interface** - Clean green-themed UI using full screen space  
-📁 **Nested Folder Management** - Create folders and subfolders with proper navigation  
-📤 **Smart File Upload** - Visual folder tree selector for choosing upload destination  
-🎯 **Drag & Drop** - Drag files and folders to move them between directories  
-🔑 **Three-Tier API Keys** - Different keys for small (5MB), medium (50MB), and large (unlimited) files  
-👁️ **Media Preview** - Preview images and play videos directly in the app  
-ℹ️ **File Details** - View complete file information including size, dates, and URLs  
-🔗 **Direct CDN URLs** - Get instant CDN URLs for all uploaded files  
-🔐 **Secure Access** - API key authentication with precise error messages  
-🖥️ **Cross-Platform** - Works on Windows, macOS, and Linux  
-⚡ **No Backend Required** - Everything runs locally on your device  
+### Core Features
+- 🎨 **Modern Professional UI** - Beautiful gradient design with smooth animations
+- 📁 **Simple File Management** - All files in one place, no complex folder structures
+- 📤 **Custom File Names** - Choose your own file names during upload
+- 🔑 **Three-Tier API Keys** - Different keys for small (5MB), medium (50MB), and large (unlimited) files
+- 🔍 **Advanced Search & Filter** - Search by name, sort by date/size/name
+- 📊 **Comprehensive Statistics** - Detailed insights into your CDN usage
+- 👁️ **Media Preview** - Preview images and play videos with elegant modals
+- ℹ️ **Detailed File Info** - Complete metadata for every file
+- 🔗 **One-Click URL Copy** - Instant CDN URL copying with toast notifications
+- 💾 **Persistent Sessions** - Stay logged in across page refreshes
+- 📚 **Built-in API Docs** - Access documentation without leaving the app
 
-## Installation
+### Statistics Dashboard
+- 📈 Total files and storage usage
+- 📊 File type distribution with visual bars
+- ⏱️ Recent uploads timeline
+- 🏆 Largest files ranking
+- 📉 Average file size calculation
+
+### User Experience
+- ⚡ Lightning-fast performance
+- 🎯 Intuitive navigation with sidebar
+- 📱 Fully responsive design
+- 🌙 Professional color scheme
+- ✨ Smooth transitions and animations
+- 🔔 Toast notifications for actions
+
+## 🚀 Installation
 
 1. **Clone or download this repository**
 
@@ -54,7 +70,7 @@ module.exports = {
 };
 ```
 
-## Running the Application
+## 🎮 Running the Application
 
 ### Development Mode
 ```bash
@@ -74,249 +90,219 @@ npm run dist
 
 This creates a distributable application in the `dist` folder.
 
-## Usage
+## 📖 Usage Guide
 
-### Admin Panel
+### Getting Started
 
-1. Launch the application
-2. Login with your credentials (from `credentials.js`)
-3. Use the interface to:
-   - Navigate through folders using the breadcrumb
-   - Create folders and subfolders
-   - Upload files using the visual folder tree selector
-   - Drag & drop files and folders to move them
-   - Preview images and videos
-   - View file details
-   - Copy file URLs
-   - Delete files and folders
+1. **Launch the application**
+2. **Login** with your credentials (from `credentials.js`)
+3. Your session will be saved - no need to login again!
 
-### File Upload with Folder Selection
+### File Management
 
-When uploading a file:
-1. Click **📤 Upload File** and select a file
-2. A modal opens showing the complete folder tree
-3. Navigate the tree structure (click arrows to expand/collapse)
-4. Click on a folder to select it as the destination
-5. Click **✓ Upload Here** to upload
-6. The file is uploaded to the selected location
+#### Upload Files
+1. Click the **"Upload File"** button
+2. Select a file from your computer
+3. Enter a **custom name** for the file (extension is preserved automatically)
+4. Click **"Upload File"** to confirm
 
-### Drag & Drop to Move Items
+**Note:** The file extension cannot be changed - only the filename. For example, if you upload `photo.jpg` and name it `vacation-2025`, it will be saved as `vacation-2025.jpg` in your CDN.
 
-**Move files or folders easily:**
-1. Click and hold on any file or folder
-2. Drag it to the destination folder
-3. The destination folder highlights in green
-4. Release to move
-5. A loader appears during the operation
+#### Search & Filter
+- Use the **search bar** to find files by name
+- Use the **sort dropdown** to organize files by:
+  - 📅 Newest/Oldest first
+  - 📊 Largest/Smallest first
+  - 🔤 Name (A-Z or Z-A)
 
-**Rules:**
-- ❌ Cannot move a folder into itself
-- ❌ Cannot move into a subfolder of itself
-- ✅ Both files and folders can be dragged
-- ✅ Works with nested folder structures
+#### File Actions
+Each file card provides quick actions:
+- **👁️ Preview** - View images or play videos (for media files)
+- **ℹ️ Details** - See complete file information including:
+  - File name and type
+  - File size
+  - Upload date and time
+  - Last modified date
+  - Full CDN URL
+- **📋 Copy URL** - Instantly copy the CDN URL to clipboard
+- **🗑️ Delete** - Remove files from your CDN
 
-### File Preview & Details
+### Statistics Dashboard
 
-**For Images:**
-- Click **👁️ Preview** to see the image in full size
-- Click **ℹ️ Details** to view file information
+Access comprehensive statistics by clicking **"Statistics"** in the sidebar:
 
-**For Videos:**
-- Click **👁️ Preview** to play the video with full controls
-- Click **ℹ️ Details** to view file information
+- **Overview Cards**: Total files, total size, file types count, average file size
+- **File Types Distribution**: Visual breakdown of file types with percentage bars
+- **Recent Uploads**: Last 10 uploaded files with timestamps
+- **Largest Files**: Top 10 largest files in your CDN
 
-**For Other Files:**
-- Click **ℹ️ Details** to view complete file information
+### API Documentation
 
-### API Integration
+Click **"API Docs"** in the sidebar to view:
+- Base URL and authentication
+- API key tiers explanation
+- All available endpoints
+- Quick examples
+
+## 🔌 API Integration
 
 See [API.md](API.md) for complete API documentation.
 
-**Quick Example with Size Limits:**
+### Quick Example - Upload with Custom Name
+
 ```javascript
-// Small files (up to 5MB)
-const smallFileFormData = new FormData();
-smallFileFormData.append('file', smallFile); // Must be ≤ 5MB
-smallFileFormData.append('folder', 'thumbnails');
+const formData = new FormData();
+formData.append('file', yourFile);
+formData.append('customFileName', 'my-custom-name.jpg');
 
 fetch('http://localhost:5000/api/file/upload', {
   method: 'POST',
   headers: {
-    'x-api-key': 'opencdn-small-files-5mb-key'
+    'x-api-key': 'opencdn-medium-files-50mb-key'
   },
-  body: smallFileFormData
+  body: formData
 })
 .then(res => res.json())
 .then(data => {
   if (data.success) {
     console.log('File URL:', data.file.url);
-  } else {
-    console.error(data.message); // Precise error if size exceeds limit
+    // http://localhost:5000/files/my-custom-name.jpg
   }
 });
-
-// Large files (unlimited)
-const largeFileFormData = new FormData();
-largeFileFormData.append('file', largeFile); // Any size
-largeFileFormData.append('folder', 'videos');
-
-fetch('http://localhost:5000/api/file/upload', {
-  method: 'POST',
-  headers: {
-    'x-api-key': 'opencdn-large-files-unlimited-key'
-  },
-  body: largeFileFormData
-});
 ```
 
-## API Key System
+## 🗂️ File Storage
 
-OpenCDN uses a three-tier API key system to control file upload sizes:
-
-| API Key Type | Max File Size | Use Case |
-|--------------|---------------|----------|
-| **Small** | 5 MB | Thumbnails, icons, small images |
-| **Medium** | 50 MB | Regular images, documents, audio files |
-| **Large** | Unlimited | Videos, large archives, backups |
-
-### Error Messages
-
-When you try to upload a file that exceeds your API key's limit, you'll receive a detailed error:
-
-```json
-{
-  "error": "Payload Too Large: File size exceeds API key limit",
-  "message": "Your file size is 40.00 MB, but your API key (Small Files max 5MB) only allows files up to 5 MB.",
-  "fileSize": 41943040,
-  "fileSizeMB": "40.00",
-  "maxSize": 5242880,
-  "maxSizeMB": "5",
-  "apiKeyType": "Small Files (max 5MB)",
-  "suggestion": "Please use the Medium Files API key (max 50MB) or Large Files API key (unlimited)."
-}
-```
-
-## File Storage
-
-Files are stored in your application's user data directory:
+All files are stored in root directory at:
 
 - **Windows:** `%APPDATA%/opencdn/cdn-storage`
 - **macOS:** `~/Library/Application Support/opencdn/cdn-storage`
 - **Linux:** `~/.config/opencdn/cdn-storage`
 
-Files maintain the folder structure you create in the app.
+No folder structure - all files in one location for simplicity.
 
-## API Endpoints
+## 🔐 API Key System
 
-| Method | Endpoint | Description | Requires API Key |
-|--------|----------|-------------|------------------|
-| GET | `/api/info` | Get storage information | ✅ |
-| GET | `/api/list` | List files and folders | ✅ |
-| POST | `/api/folder/create` | Create a new folder | ✅ |
-| DELETE | `/api/folder/delete` | Delete a folder | ✅ |
-| POST | `/api/file/upload` | Upload a file (size checked) | ✅ |
-| DELETE | `/api/file/delete` | Delete a file | ✅ |
-| POST | `/api/move/file` | Move or rename a file | ✅ |
-| POST | `/api/move/folder` | Move or rename a folder | ✅ |
-| POST | `/api/admin/login` | Admin panel login | ❌ |
-| GET | `/files/{path}` | Access files directly | ❌ |
+OpenCDN uses a three-tier API key system:
 
-All endpoints (except `/api/admin/login` and `/files/*`) require the `x-api-key` header.
+| API Key | Max Size | Best For |
+|---------|----------|----------|
+| **Small** | 5 MB | Icons, thumbnails, small images |
+| **Medium** | 50 MB | Photos, documents, audio files |
+| **Large** | Unlimited | Videos, large files, backups |
 
-See [API.md](API.md) for detailed documentation with examples.
+When a file exceeds the API key limit, you'll receive a detailed error message suggesting the correct key to use.
 
-## Project Structure
+## 🛠️ API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/info` | Get storage statistics |
+| GET | `/api/list` | List all files |
+| POST | `/api/file/upload` | Upload file with custom name |
+| DELETE | `/api/file/delete` | Delete a file |
+| POST | `/api/admin/login` | Admin authentication |
+| GET | `/files/{filename}` | Direct file access (public) |
+
+All API endpoints (except login and file access) require the `x-api-key` header.
+
+## 🎨 Design Features
+
+- **Modern Gradient UI** with green color scheme
+- **Smooth Animations** on all interactions
+- **Professional Cards** with hover effects
+- **Responsive Layout** works on all screen sizes
+- **Toast Notifications** for user feedback
+- **Loading States** with elegant spinners
+- **Empty States** with helpful messages
+- **Modal Dialogs** with blur backdrop
+- **Custom Scrollbars** for polish
+
+## 🔧 Technologies
+
+- **Electron** - Desktop application framework
+- **React 18** - Modern UI library with hooks
+- **Express** - High-performance HTTP server
+- **Multer** - File upload handling
+- **Node.js File System** - File storage management
+- **CSS Variables** - Consistent theming
+- **CSS Animations** - Smooth transitions
+
+## 🐛 Troubleshooting
+
+### Port Already in Use
+If port 5000 is in use, modify `CDN_PORT` in `electron/main.js`.
+
+### Session Not Persisting
+Clear browser storage and restart the app. Check browser console for errors.
+
+### Upload Fails
+- Verify API key is correct
+- Check file size against API key limit
+- Ensure storage directory has write permissions
+
+### Preview Not Working
+- Supported formats: Images (jpg, png, gif, etc.), Videos (mp4, webm, ogg)
+- Check browser console for errors
+- Verify file URL is accessible
+
+## 📊 Project Structure
 
 ```
 opencdn/
 ├── electron/
-│   └── main.js           # Electron main + Express server with API key validation
+│   └── main.js           # Electron + Express server
 ├── src/
-│   ├── App.js            # React admin interface with preview modals
-│   ├── App.css           # Green-themed full-width styles
+│   ├── App.js            # React application
+│   ├── App.css           # Modern styling
 │   └── index.js          # React entry point
 ├── public/
 │   └── index.html        # HTML template
-├── credentials.js        # Admin credentials + 3 API keys
-├── package.json          # Dependencies and scripts
-├── API.md               # Complete API documentation
+├── credentials.js        # Authentication config
+├── package.json          # Dependencies
+├── API.md               # API documentation
 └── README.md            # This file
 ```
 
-## Technologies
+## 🔒 Security Best Practices
 
-- **Electron** - Desktop application framework
-- **React** - UI framework with modal components
-- **Express** - HTTP server and API with file size validation
-- **Multer** - File upload handling
-- **Node.js File System** - File storage and management
+1. **Change Default Credentials** immediately
+2. **Keep API Keys Secret** - don't commit to repositories
+3. **Use Appropriate Keys** for different file sizes
+4. **Enable HTTPS** in production
+5. **Firewall Rules** to restrict access if needed
+6. **Regular Backups** of cdn-storage directory
+7. **Monitor Usage** via Statistics dashboard
 
-## Security
+## ✨ Changelog
 
-⚠️ **Important Security Notes:**
+### Version 2.0.0 - Major Redesign
+- ✅ Complete UI/UX redesign with modern aesthetics
+- ✅ Removed folder/subfolder complexity
+- ✅ Custom file naming during upload
+- ✅ Advanced search and filtering
+- ✅ Comprehensive statistics dashboard
+- ✅ Persistent login sessions
+- ✅ Professional card-based layout
+- ✅ Toast notifications
+- ✅ Improved modals with blur backdrop
+- ✅ Complete file details view
+- ✅ Sidebar navigation
+- ✅ Responsive design improvements
+- ✅ Smooth animations throughout
+- ✅ Better error handling
+- ✅ Performance optimizations
 
-1. **Change all default credentials** in `credentials.js` before using
-2. **Keep your API keys secret** - don't commit them to public repositories
-3. **Use appropriate API keys** - Don't share the unlimited key publicly
-4. **Firewall:** Restrict access to port 5000 if needed
-5. **HTTPS:** For production, consider using HTTPS
-6. **Backups:** Regularly backup your `cdn-storage` directory
-
-## Troubleshooting
-
-### Port Already in Use
-If port 5000 is already in use, modify the `CDN_PORT` constant in `electron/main.js`.
-
-### Files Not Accessible
-Ensure the CDN server is running on `http://localhost:5000` and check firewall settings.
-
-### Upload Fails with Size Error
-Check the error message - it will tell you exactly which API key to use. If uploading a 40MB file:
-- ❌ Small key (5MB limit) - Will fail with clear error
-- ✅ Medium key (50MB limit) - Will succeed
-- ✅ Large key (unlimited) - Will succeed
-
-### File Uploaded to Wrong Folder
-Make sure you're in the correct folder before uploading. The breadcrumb shows your current location.
-
-**New:** Use the visual folder tree selector when uploading to choose exactly where the file should go.
-
-### Drag & Drop Not Working
-- Ensure you're dragging onto a folder (not a file)
-- The destination folder will highlight in green when valid
-- Check browser console for any JavaScript errors
-
-### Preview Not Working
-- Images: Ensure the file has a valid image extension (.jpg, .png, .gif, etc.)
-- Videos: Ensure the file has a valid video extension (.mp4, .webm, .ogg, etc.)
-- Your browser must support the media format
-
-## Changelog
-
-### Version 1.0.0
-- ✅ Three-tier API key system with size limits
-- ✅ Full-screen green-themed modern UI
-- ✅ Image and video preview with modal
-- ✅ Detailed file information view
-- ✅ Proper nested folder navigation
-- ✅ Visual folder tree selector for uploads
-- ✅ Drag & drop to move files and folders
-- ✅ Move/rename files and folders via API
-- ✅ Animated loader during operations
-- ✅ Smart folder tree (no arrows for empty folders)
-- ✅ Automatic folder creation on upload
-- ✅ Precise error messages for all API operations
-- ✅ Copy-to-clipboard for file URLs
-- ✅ Integrated API documentation viewer
-
-## License
+## 📝 License
 
 MIT License - feel free to modify and use for your projects!
 
-## Contributing
+## 🤝 Contributing
 
 This is an open-source project. Feel free to fork, modify, and improve it!
 
 ---
 
 Made with 💚 using Electron and React
+
+**OpenCDN** - Simple, Modern, Professional

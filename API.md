@@ -250,7 +250,7 @@ curl -X DELETE \
 
 ### 5. Upload File
 
-Upload a file to the CDN storage. **File size is validated against the API key's limit.**
+Upload a file to the CDN storage with a custom filename.
 
 **Endpoint:** `POST /api/file/upload`
 
@@ -260,13 +260,14 @@ Upload a file to the CDN storage. **File size is validated against the API key's
 
 **Form Data:**
 - `file`: The file to upload (required)
-- `folder`: Destination folder path (optional, default: root). **If the path doesn't exist, it will be created automatically.**
-- `keepOriginalName`: Keep original filename - `true` or `false` (optional, default: generates UUID)
+- `customFileName`: Custom name for the file in CDN (required). **The extension from the original file will be preserved automatically.**
 
 **Important Notes:**
-- The API will automatically create the folder structure if it doesn't exist
-- You can specify nested paths like `images/2025/thumbnails` even if they don't exist yet
+- The file extension is automatically extracted from the original file and appended
+- You only need to provide the filename without extension
+- Example: If you upload `photo.jpg` with `customFileName: "vacation-2025"`, it will be saved as `vacation-2025.jpg`
 - File size is validated against the API key's limit
+- All files are stored in the root directory
 
 **Response (Success):**
 ```json
@@ -307,15 +308,16 @@ Upload a file to the CDN storage. **File size is validated against the API key's
 }
 ```
 
-**Example (cURL - Upload to nested path that doesn't exist yet):**
+**Example (cURL - Upload with custom name):**
 ```bash
-# This will automatically create the folder structure images/2025/thumbnails
+# Upload a file with custom name "my-vacation" - extension .jpg will be preserved
 curl -X POST \
   -H "x-api-key: opencdn-small-files-5mb-key" \
-  -F "file=@/path/to/thumbnail.jpg" \
-  -F "folder=images/2025/thumbnails" \
-  -F "keepOriginalName=true" \
+  -F "file=@/path/to/photo.jpg" \
+  -F "customFileName=my-vacation" \
   http://localhost:5000/api/file/upload
+
+# Result: File will be saved as "my-vacation.jpg"
 ```
 
 **Example (cURL - Large File):**
@@ -323,18 +325,28 @@ curl -X POST \
 curl -X POST \
   -H "x-api-key: opencdn-large-files-unlimited-key" \
   -F "file=@/path/to/large-video.mp4" \
-  -F "folder=videos" \
-  -F "keepOriginalName=true" \
+  -F "customFileName=presentation-video" \
   http://localhost:5000/api/file/upload
+
+# Result: File will be saved as "presentation-video.mp4"
 ```
 
 **Example (JavaScript with FormData):**
 ```javascript
+// Get original file extension
+const getFileExtension = (filename) => {
+  const lastDot = filename.lastIndexOf('.');
+  return lastDot !== -1 ? filename.substring(lastDot) : '';
+};
+
+const file = fileInput.files[0];
+const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+const extension = getFileExtension(file.name);
+
 const formData = new FormData();
-formData.append('file', fileInput.files[0]);
-// Specify any path - will be created if it doesn't exist
-formData.append('folder', 'uploads/2025/january/documents');
-formData.append('keepOriginalName', 'true');
+formData.append('file', file);
+// Only provide the name without extension - extension is preserved automatically
+formData.append('customFileName', 'my-custom-name' + extension);
 
 fetch('http://localhost:5000/api/file/upload', {
   method: 'POST',
@@ -347,10 +359,10 @@ fetch('http://localhost:5000/api/file/upload', {
 .then(data => {
   if (data.success) {
     console.log('File URL:', data.file.url);
-    console.log('Uploaded to:', data.file.path);
+    console.log('Final filename:', data.file.filename);
+    // Final filename will be: my-custom-name.jpg (or whatever extension)
   } else {
     console.error('Upload failed:', data.message);
-    // The error message will tell you which API key to use
   }
 });
 ```
@@ -359,11 +371,14 @@ fetch('http://localhost:5000/api/file/upload', {
 ```javascript
 const FormData = require('form-data');
 const fs = require('fs');
+const path = require('path');
 
 const form = new FormData();
-form.append('file', fs.createReadStream('/path/to/file.jpg'));
-form.append('folder', 'uploads/2025');
-form.append('keepOriginalName', 'true');
+const filePath = '/path/to/file.jpg';
+const fileName = path.basename(filePath, path.extname(filePath)); // Get name without extension
+
+form.append('file', fs.createReadStream(filePath));
+form.append('customFileName', 'my-renamed-file' + path.extname(filePath));
 
 fetch('http://localhost:5000/api/file/upload', {
   method: 'POST',
